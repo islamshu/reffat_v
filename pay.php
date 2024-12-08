@@ -253,7 +253,7 @@ $installment_by = isset($_SESSION["installment_by"]) ? $_SESSION["installment_by
                             <div class="col-lg-12">
                                 <input type="hidden" value="<?=$totalPrice?>" id="totalPrice">
                     <span class="mb-1 d-inline-block spanlable">الدفع/التقسيط على</span>
-                    <select name="CashOrBatch" id="CashOrBatch" class="form-control rounded mb-3" id="">
+                    <select name="CashOrBatch" id="CashOrBatch"  class="form-control rounded mb-3" id="">
                         <option value="0">نقدا</option>
                         <?php  if($payment_method == 'installment') { ?> 
                             <?php  
@@ -486,6 +486,10 @@ $firstBatchValue = ($payment_method == 'installment') ? $_SESSION["first_payment
         $('input[paymentWay]').change(function(event) {
             alert('ff');
         });
+        const installmentSelect = document.getElementById('CashOrBatch');
+    installmentSelect.addEventListener('mousedown', function (event) {
+        event.preventDefault(); // منع المستخدم من فتح القائمة
+    });
     </script>
 
 </body>

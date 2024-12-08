@@ -55,7 +55,29 @@ if (isset($_SESSION["user"])) {
 <html lang="ar" dir="rtl">
 
 <head>
-    <?php include "head.php"; ?>
+    <?php include "head.php";
+    $query = "SELECT * FROM `users` WHERE id = 2";
+    $result = $db->dbQuery($query);
+    
+    $userrr = $_SESSION["user"];
+    $carts = "SELECT * FROM `cart` WHERE `user` = $userrr";
+    $result_cart = $db->dbQuery($carts);
+
+    $cart_count = $db->dbNumRows($result_cart);
+    if($db->dbNumRows( $result)){
+        $quantity = 0;
+        $rows = $db->dbFetchResult($result);
+        foreach($rows as $row){ 
+            $quantity = $quantity+ $row["quantity"];
+        }
+    }
+
+    $sql_te = "Select * from setting where id = 1";
+    $rs = $db->dbQuery($sql_te);
+    $row_tb = $db->dbFetchRecord($rs);  
+    $batch = $row_tb['batch'];
+      $cart_count = $quantity * $batch;
+    ?>
 
     <style>
         .floating-box {
@@ -334,17 +356,17 @@ if (isset($_SESSION["user"])) {
         <!-- First Payment -->
         <div class="form-group mb-3 installment">
             <label class="product-option-name required">الدفعة الاولى</label>
-            <input value="<?php echo ($price); ?>" min="0" id="FirstPayment" name="FirstPayment" class="form-control" type="number">
+            <input value="<?php echo ($cart_count); ?>" min="0" readonly id="FirstPayment" name="FirstPayment" class="form-control" type="number">
         </div>
 
         <!-- Installment By -->
         <div class="form-group mb-3 installment">
-            <label class="product-option-name required">الدفع/التقسيط على</label>
+            <label class="product-option-name required">الرجاء تحديد عدد شهور التقسيط </label>
             <select name="InstallmentBy" id="InstallmentBy" class="form-control">
                 <?php
                 for ($i = 0; $i <= 24; $i++) {
                     if ($i === 0) {
-                        echo '<option value="0">نقدا</option>';
+                        continue;
                     } else {
                         echo '<option value="' . $i . '">' . $i . ' شهر</option>';
                     }
@@ -497,45 +519,59 @@ if (isset($_SESSION["user"])) {
                 }
             });
         </script>
-        <script>
-            // تحديد الحقول المطلوبة
-            const installmentSelect = document.getElementById('InstallmentBy');
-            const firstPaymentInput = document.getElementById('FirstPayment');
-            const monthlyPaymentInput = document.getElementById('MonthlyPayment');
-            const monthlyPaymentLi = document.getElementById('MonthlyPaymentLi');
-            const totalPriceInput = document.getElementById('TotalPrice');
+<script>
+    // تحديد الحقول المطلوبة
+    const installmentSelect = document.getElementById('InstallmentBy');
+    const firstPaymentInput = document.getElementById('FirstPayment');
+    const monthlyPaymentInput = document.getElementById('MonthlyPayment');
+    const monthlyPaymentLi = document.getElementById('MonthlyPaymentLi');
+    const totalPriceInput = document.getElementById('TotalPrice');
 
-            // دالة لحساب القسط الشهري
-            function updateMonthlyPayment() {
-                const selectedValue = parseInt(installmentSelect.value); // القيمة المختارة لعدد الشهور
-                const firstPaymentValue = parseFloat(firstPaymentInput.value); // قيمة الدفعة الأولى
-                const totalPriceValue = parseFloat(totalPriceInput.value); // المجموع الكلي
+    // دالة لحساب القسط الشهري
+    function updateMonthlyPayment() {
+        const selectedMonths = parseInt(installmentSelect.value); // القيمة المختارة لعدد الشهور
+        const firstPaymentValue = parseFloat(firstPaymentInput.value) || 0; // قيمة الدفعة الأولى
+        const totalPriceValue = parseFloat(totalPriceInput.value) || 0; // المجموع الكلي
 
-                if (selectedValue > 0 && firstPaymentValue >= 0) {
-                    // إذا تم اختيار التقسيط وقيمة الدفعة الأولى صالحة
-                    const remainingAmount = totalPriceValue - firstPaymentValue; // المبلغ المتبقي بعد الدفعة الأولى
-                    if (remainingAmount >= 0) {
-                        const monthlyPayment = (remainingAmount / selectedValue).toFixed(2); // حساب القسط الشهري
-                        monthlyPaymentLi.style.display = 'block'; // عرض حقل الدفعة الشهرية
-                        monthlyPaymentInput.value = monthlyPayment; // تحديث قيمة القسط الشهري
-                    } else {
-                        alert("الدفعة الأولى أكبر من المجموع الكلي!");
-                        firstPaymentInput.value = totalPriceValue; // إعادة الدفعة الأولى إلى الحد الأقصى
-                        monthlyPaymentLi.style.display = 'none';
-                        monthlyPaymentInput.value = 0;
-                    }
-                } else {
-                    // إذا تم اختيار نقدا أو كانت القيم غير صالحة
-                    monthlyPaymentLi.style.display = 'none';
-                    monthlyPaymentInput.value = 0;
-                }
+        if (selectedMonths > 0) {
+            const remainingAmount = totalPriceValue - firstPaymentValue; // المبلغ المتبقي بعد الدفعة الأولى
+            if (remainingAmount >= 0) {
+                const monthlyPayment = (remainingAmount / selectedMonths).toFixed(2); // حساب القسط الشهري
+                monthlyPaymentLi.style.display = 'block'; // عرض حقل الدفعة الشهرية
+                monthlyPaymentInput.value = monthlyPayment; // تحديث قيمة القسط الشهري
+            } else {
+                alert("الدفعة الأولى أكبر من المجموع الكلي!"); // تحذير عند تجاوز الدفعة الأولى للمجموع
+                firstPaymentInput.value = totalPriceValue; // إعادة الدفعة الأولى إلى الحد الأقصى
+                monthlyPaymentLi.style.display = 'none';
+                monthlyPaymentInput.value = 0;
             }
+        } else {
+            monthlyPaymentLi.style.display = 'none'; // إخفاء حقل الدفعة الشهرية إذا لم يتم اختيار عدد الأشهر
+            monthlyPaymentInput.value = 0;
+        }
+    }
 
-            // إضافة أحداث عند تغيير القيم
-            installmentSelect.addEventListener('change', updateMonthlyPayment);
-            firstPaymentInput.addEventListener('input', updateMonthlyPayment);
-        </script>
+    // إضافة أحداث عند تغيير القيم
+    installmentSelect.addEventListener('change', updateMonthlyPayment);
+    firstPaymentInput.addEventListener('input', updateMonthlyPayment);
 
+    // عرض الحقول عند اختيار "تقسيط"
+    document.getElementById('installment').addEventListener('change', function () {
+        const installmentElements = document.querySelectorAll('.installment');
+        if (this.value === 'installment') {
+            installmentElements.forEach(element => {
+                element.style.display = 'block'; // عرض الحقول المرتبطة بالتقسيط
+            });
+            updateMonthlyPayment(); // تحديث القسط الشهري مباشرة
+        } else {
+            installmentElements.forEach(element => {
+                element.style.display = 'none'; // إخفاء الحقول إذا تم اختيار طريقة دفع أخرى
+            });
+            monthlyPaymentLi.style.display = 'none';
+            monthlyPaymentInput.value = 0;
+        }
+    });
+</script>
 
 
 
