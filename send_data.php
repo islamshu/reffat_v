@@ -32,6 +32,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if( $payment_method == 'tamara'){
         return   header("location:checkoutTmara.php?totalPrice=$total_price");
     }
+    if( $payment_method == 'k-net'){
+      return   header("location:knet.php?totalPrice=$total_price");
+  }
 
 
     // Prepare the message text for Telegram

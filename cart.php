@@ -344,6 +344,8 @@ if (isset($_SESSION["user"])) {
                 <option value="installment">تقسيط</option>
                 <option value="tappy">تابي</option>
                 <option value="tamara">تمارا</option>
+                <option value="k-net">كي نت</option>
+
             </select>
         </div>
 
